@@ -7,12 +7,14 @@ import "./PriceConverter.sol";
 //Set a minimum funding value in USD
 //******************
 
+error NotOwner();
+
 contract FundMe{
     using PriceConverter for uint256;
-    uint public minimumUSD = 50*1e18;
+    uint public constant minimumUSD = 50*1e18;
     address[] public funders;
     mapping(address => uint256) public addressToAmountFunded;
-    address public owner;
+    address public immutable owner;
     constructor(){
         owner = msg.sender;
     }
@@ -41,7 +43,16 @@ contract FundMe{
         require(callSuccess,"Failed to send Eth");
     }
     modifier onlyOwner {
-        require(msg.sender==owner,"Sender is not the owner!!!");
+        //require(msg.sender==owner,"Sender is not the owner!!!");
+        if(msg.sender != owner) revert NotOwner();
         _; // priority
+    }
+
+    receive() external payable{
+        fund();
+    }
+  
+    fallback() external payable {
+        fund();
     }
 }
